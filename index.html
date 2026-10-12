@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f5f0">
+  <title>Daybook - your calendar</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #f4f5f0;
+      --white: #fff;
+      --ink: #202820;
+      --muted: #7b837b;
+      --line: #e7e9e2;
+      --green: #315c45;
+      --green-pale: #e7eee7;
+      --coral: #d7795d;
+      --serif: "Fraunces", Georgia, serif;
+      --sans: "DM Sans", "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      min-width: 320px;
+      min-height: 100vh;
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font: 14px/1.5 var(--sans);
+    }
+
+    button, input { font: inherit; }
+    button { color: inherit; }
+    .topbar {
+      height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 max(6vw, 24px);
+      border-bottom: 1px solid #e8eae4;
+      background: rgb(255 255 255 / 55%);
+    }
+    .brand { display: flex; align-items: center; gap: 11px; font-weight: 700; font-size: 16px; }
+    .brand-mark {
+      display: grid;
+      width: 32px;
+      height: 32px;
+      place-items: center;
+      border-radius: 9px;
+      color: var(--white);
+      background: var(--green);
+      font-size: 15px;
+    }
+    .today-button {
+      border: 1px solid #dfe3dc;
+      border-radius: 6px;
+      padding: 8px 14px;
+      background: var(--white);
+      cursor: pointer;
+    }
+    .today-button:hover, .month-button:hover { background: var(--green-pale); }
+    main { width: min(1120px, 88vw); margin: 54px auto 72px; }
+    .intro { margin-bottom: 28px; }
+    .eyebrow {
+      margin: 0 0 7px;
+      color: var(--green);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    h1 {
+      margin: 0;
+      font: 500 34px/1.2 var(--serif);
+    }
+    .subtitle { margin: 7px 0 0; color: var(--muted); }
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 1.55fr) minmax(290px, .85fr);
+      overflow: hidden;
+      border: 1px solid #e4e7df;
+      border-radius: 8px;
+      background: var(--white);
+      box-shadow: 0 12px 36px rgb(34 48 37 / 5%);
+    }
+    .calendar { padding: 25px 28px 29px; }
+    .calendar-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+    .month-title { margin: 0; font: 500 22px/1.2 var(--serif); }
+    .month-controls { display: flex; gap: 6px; }
+    .month-button {
+      display: grid;
+      width: 34px;
+      height: 34px;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--white);
+      cursor: pointer;
+      font-size: 18px;
+    }
+    .weekdays, .days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+    .weekdays { margin-bottom: 8px; }
+    .weekday { color: var(--muted); text-align: center; font-size: 11px; font-weight: 600; }
+    .days { row-gap: 4px; }
+    .day {
+      display: flex;
+      min-width: 0;
+      aspect-ratio: 1.2;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      border: 0;
+      border-radius: 7px;
+      background: transparent;
+      cursor: pointer;
+    }
+    .day:hover { background: #f4f6f1; }
+    .day-number { display: grid; width: 30px; height: 30px; place-items: center; border-radius: 50%; }
+    .day.outside { color: #b8beb6; }
+    .day.today .day-number { color: var(--green); box-shadow: inset 0 0 0 1px #9aaf9d; }
+    .day.selected { color: var(--white); background: var(--green); }
+    .day.selected .day-number { color: var(--white); }
+    .day.selected.today .day-number { box-shadow: inset 0 0 0 1px rgb(255 255 255 / 55%); }
+    .day-dots { display: flex; height: 5px; gap: 3px; }
+    .day-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--coral); }
+    .day.selected .day-dot { background: #f7c3aa; }
+    .agenda {
+      padding: 27px 25px;
+      border-left: 1px solid var(--line);
+      background: #fcfcfa;
+    }
+    .agenda-date { margin: 0; font: 500 22px/1.25 var(--serif); }
+    .task-count { margin: 5px 0 20px; color: var(--muted); font-size: 12px; }
+    .task-form { display: flex; gap: 8px; margin-bottom: 22px; }
+    .task-input {
+      min-width: 0;
+      flex: 1;
+      border: 1px solid #dfe3dc;
+      border-radius: 6px;
+      padding: 10px 11px;
+      outline: none;
+      background: var(--white);
+    }
+    .task-input:focus { border-color: #719078; box-shadow: 0 0 0 3px rgb(49 92 69 / 10%); }
+    .add-button {
+      width: 40px;
+      border: 0;
+      border-radius: 6px;
+      color: var(--white);
+      background: var(--green);
+      cursor: pointer;
+      font-size: 20px;
+    }
+    .add-button:hover { background: #244a36; }
+    .task-list { display: grid; gap: 2px; padding: 0; margin: 0; list-style: none; }
+    .task-row { display: flex; align-items: center; gap: 10px; min-height: 42px; border-bottom: 1px solid #eff0ec; }
+    .task-check { width: 16px; height: 16px; margin: 0; accent-color: var(--green); cursor: pointer; }
+    .task-name { flex: 1; overflow-wrap: anywhere; }
+    .task-row.completed .task-name { color: #9ba19a; text-decoration: line-through; }
+    .delete-button {
+      width: 28px;
+      height: 28px;
+      border: 0;
+      border-radius: 5px;
+      color: #929990;
+      background: transparent;
+      cursor: pointer;
+      font-size: 17px;
+      opacity: 0;
+    }
+    .task-row:hover .delete-button, .delete-button:focus-visible { opacity: 1; }
+    .delete-button:hover { color: #a84e38; background: #f8ece8; }
+    .empty-state { padding: 24px 4px; color: var(--muted); text-align: center; font-size: 13px; }
+    @media (max-width: 760px) {
+      main { width: min(600px, calc(100% - 32px)); margin: 35px auto 48px; }
+      .workspace { grid-template-columns: 1fr; }
+      .agenda { border-top: 1px solid var(--line); border-left: 0; }
+    }
+    @media (max-width: 420px) {
+      .topbar { height: 60px; padding: 0 16px; }
+      main { width: calc(100% - 24px); margin-top: 28px; }
+      h1 { font-size: 30px; }
+      .calendar { padding: 20px 12px 23px; }
+      .agenda { padding: 23px 17px; }
+      .day { aspect-ratio: 1; }
+      .day-number { width: 28px; height: 28px; }
+    }
+    @media (hover: none) { .delete-button { opacity: 1; } }
+    @media (prefers-reduced-motion: no-preference) {
+      main { animation: arrive .35s ease-out both; }
+      @keyframes arrive { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: translateY(0); } }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark" aria-hidden="true">d</span> daybook</div>
+    <button class="today-button" id="today-button" type="button">Today</button>
+  </header>
+  <main>
+    <div class="intro">
+      <p class="eyebrow">Make room for what matters</p>
+      <h1>Your calendar</h1>
+      <p class="subtitle">A little plan for each day.</p>
+    </div>
+    <section class="workspace" aria-label="Calendar and daily tasks">
+      <div class="calendar">
+        <div class="calendar-heading">
+          <h2 class="month-title" id="month-title"></h2>
+          <div class="month-controls" aria-label="Change month">
+            <button class="month-button" id="previous-month" type="button" aria-label="Previous month">&lsaquo;</button>
+            <button class="month-button" id="next-month" type="button" aria-label="Next month">&rsaquo;</button>
+          </div>
+        </div>
+        <div class="weekdays" aria-hidden="true">
+          <span class="weekday">Sun</span><span class="weekday">Mon</span><span class="weekday">Tue</span>
+          <span class="weekday">Wed</span><span class="weekday">Thu</span><span class="weekday">Fri</span><span class="weekday">Sat</span>
+        </div>
+        <div class="days" id="days" role="grid" aria-label="Days of the month"></div>
+      </div>
+      <aside class="agenda" aria-labelledby="agenda-date">
+        <h2 class="agenda-date" id="agenda-date"></h2>
+        <p class="task-count" id="task-count"></p>
+        <form class="task-form" id="task-form">
+          <input class="task-input" id="task-input" type="text" maxlength="120" placeholder="Add a task..." aria-label="New task" required>
+          <button class="add-button" type="submit" aria-label="Add task" title="Add task">+</button>
+        </form>
+        <ul class="task-list" id="task-list"></ul>
+      </aside>
+    </section>
+  </main>
+  <script>
+    const storageKey = "daybook-tasks-v1";
+    const today = new Date();
+    const localDateKey = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+    const todayKey = localDateKey(today);
+    let selectedDate = todayKey;
+    let visibleMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    let tasks = {};
+
+    try {
+      const savedTasks = JSON.parse(localStorage.getItem(storageKey) || "{}");
+      if (savedTasks && typeof savedTasks === "object" && !Array.isArray(savedTasks)) tasks = savedTasks;
+    } catch {
+      tasks = {};
+    }
+
+    const monthTitle = document.getElementById("month-title");
+    const daysContainer = document.getElementById("days");
+    const agendaDate = document.getElementById("agenda-date");
+    const taskCount = document.getElementById("task-count");
+    const taskList = document.getElementById("task-list");
+    const taskInput = document.getElementById("task-input");
+    const longDate = new Intl.DateTimeFormat(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+    const shortDate = new Intl.DateTimeFormat(undefined, { month: "long", year: "numeric" });
+
+    function saveTasks() {
+      try { localStorage.setItem(storageKey, JSON.stringify(tasks)); } catch {}
+    }
+
+    function renderCalendar() {
+      const year = visibleMonth.getFullYear();
+      const month = visibleMonth.getMonth();
+      monthTitle.textContent = shortDate.format(visibleMonth);
+      daysContainer.replaceChildren();
+      const firstWeekday = new Date(year, month, 1).getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const cellCount = Math.ceil((firstWeekday + daysInMonth) / 7) * 7;
+
+      for (let index = 0; index < cellCount; index += 1) {
+        const date = new Date(year, month, index - firstWeekday + 1);
+        const key = localDateKey(date);
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "day";
+        button.setAttribute("role", "gridcell");
+        button.setAttribute("aria-label", longDate.format(date));
+        button.setAttribute("aria-pressed", String(key === selectedDate));
+        if (date.getMonth() !== month) button.classList.add("outside");
+        if (key === todayKey) button.classList.add("today");
+        if (key === selectedDate) button.classList.add("selected");
+
+        const number = document.createElement("span");
+        number.className = "day-number";
+        number.textContent = String(date.getDate());
+        button.append(number);
+
+        const dots = document.createElement("span");
+        dots.className = "day-dots";
+        dots.setAttribute("aria-hidden", "true");
+        const dayTasks = Array.isArray(tasks[key]) ? tasks[key] : [];
+        for (let dot = 0; dot < Math.min(dayTasks.length, 3); dot += 1) {
+          const marker = document.createElement("span");
+          marker.className = "day-dot";
+          dots.append(marker);
+        }
+        button.append(dots);
+        button.addEventListener("click", () => {
+          selectedDate = key;
+          visibleMonth = new Date(date.getFullYear(), date.getMonth(), 1);
+          render();
+        });
+        daysContainer.append(button);
+      }
+    }
+
+    function renderTasks() {
+      const dayTasks = Array.isArray(tasks[selectedDate]) ? tasks[selectedDate] : [];
+      const remaining = dayTasks.filter((task) => !task.done).length;
+      agendaDate.textContent = longDate.format(new Date(`${selectedDate}T12:00:00`));
+      taskCount.textContent = dayTasks.length === 0 ? "No tasks yet" : `${remaining} ${remaining === 1 ? "task" : "tasks"} left`;
+      taskList.replaceChildren();
+
+      if (dayTasks.length === 0) {
+        const empty = document.createElement("li");
+        empty.className = "empty-state";
+        empty.textContent = "Nothing planned. Add a task to get started.";
+        taskList.append(empty);
+        return;
+      }
+
+      dayTasks.forEach((task, index) => {
+        const row = document.createElement("li");
+        row.className = `task-row${task.done ? " completed" : ""}`;
+        const checkbox = document.createElement("input");
+        checkbox.className = "task-check";
+        checkbox.type = "checkbox";
+        checkbox.checked = Boolean(task.done);
+        checkbox.setAttribute("aria-label", `Mark ${task.title} ${task.done ? "incomplete" : "complete"}`);
+        checkbox.addEventListener("change", () => {
+          task.done = checkbox.checked;
+          saveTasks();
+          render();
+        });
+
+        const name = document.createElement("span");
+        name.className = "task-name";
+        name.textContent = task.title;
+        const remove = document.createElement("button");
+        remove.className = "delete-button";
+        remove.type = "button";
+        remove.textContent = "\u00d7";
+        remove.setAttribute("aria-label", `Delete ${task.title}`);
+        remove.addEventListener("click", () => {
+          dayTasks.splice(index, 1);
+          if (dayTasks.length === 0) delete tasks[selectedDate];
+          saveTasks();
+          render();
+        });
+        row.append(checkbox, name, remove);
+        taskList.append(row);
+      });
+    }
+
+    function render() {
+      renderCalendar();
+      renderTasks();
+    }
+
+    document.getElementById("previous-month").addEventListener("click", () => {
+      visibleMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() - 1, 1);
+      renderCalendar();
+    });
+    document.getElementById("next-month").addEventListener("click", () => {
+      visibleMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1, 1);
+      renderCalendar();
+    });
+    document.getElementById("today-button").addEventListener("click", () => {
+      selectedDate = todayKey;
+      visibleMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+      render();
+    });
+    document.getElementById("task-form").addEventListener("submit", (event) => {
+      event.preventDefault();
+      const title = taskInput.value.trim();
+      if (!title) return;
+      if (!Array.isArray(tasks[selectedDate])) tasks[selectedDate] = [];
+      tasks[selectedDate].push({ title, done: false });
+      taskInput.value = "";
+      saveTasks();
+      render();
+      taskInput.focus();
+    });
+
+    render();
+  </script>
+</body>
+</html>
